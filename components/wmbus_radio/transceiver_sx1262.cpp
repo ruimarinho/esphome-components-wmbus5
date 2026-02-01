@@ -59,10 +59,17 @@ void SX1262::setup() {
   });
   
   ESP_LOGVV(TAG, "setting RX gain");
+  uint8_t rx_gain_val = (this->rx_gain_mode_ == RX_GAIN_BOOSTED) ? 0x96 : 0x94;
   this->spi_write(RADIOLIB_SX126X_CMD_WRITE_REGISTER, {
                   BYTE(RADIOLIB_SX126X_REG_RX_GAIN, 1), BYTE(RADIOLIB_SX126X_REG_RX_GAIN, 0),
-                  RADIOLIB_SX126X_RX_GAIN_POWER_SAVING
+                  rx_gain_val
   });
+
+  // Configure DIO2 as RF switch control if enabled
+  if (this->rf_switch_) {
+    ESP_LOGVV(TAG, "setting DIO2 as RF switch control");
+    this->spi_write(RADIOLIB_SX126X_CMD_SET_DIO2_AS_RF_SWITCH_CTRL, {0x01});
+  }
 
   ESP_LOGVV(TAG, "setting IRQ parameters");
   const uint32_t irqmask = RADIOLIB_SX126X_IRQ_RX_DONE;
